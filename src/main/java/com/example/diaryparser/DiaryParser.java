@@ -1,9 +1,5 @@
 package com.example.diaryparser;
 
-import javafx.application.Application;
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 
@@ -15,14 +11,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class HelloApplication extends Application {
-
-    public static void main(String[] args) {
-        launch();
-    }
+public class DiaryParser {
 
     public static void listFiles(List<File> files) {
-        List<Note> notes = files.stream().map(HelloApplication::parseFile).toList();
+        List<Note> notes = files.stream().map(DiaryParser::parseFile).toList();
     }
 
     public static List<File> loadFiles(Stage stage) {
@@ -80,28 +72,7 @@ public class HelloApplication extends Application {
         return new Note(entries);
     }
 
-    @Override
-    public void start(Stage stage) {
-
-
-        Button loadFiles = new Button("Load files");
-        loadFiles.setOnAction(e -> {
-            listFiles(loadFiles(stage));
-        });
-
-        VBox root = new VBox(10);
-        root.getChildren().add(loadFiles);
-
-        Scene scene = new Scene(root, 600, 240);
-
-        stage.setTitle("Diary Parser");
-        stage.setScene(scene);
-        stage.show();
-    }
-
     // map of headings, and all lines of text under heading
     record Note(Map<String, List<String>> entries) {
     }
-
-
 }
