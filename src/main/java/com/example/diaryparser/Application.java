@@ -4,10 +4,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -48,6 +45,8 @@ public class Application extends javafx.application.Application {
 
         stage.setTitle("Diary Parser");
         stage.setScene(scene);
+        stage.setWidth(1000);
+        stage.setHeight(700);
         stage.show();
     }
 
@@ -73,6 +72,8 @@ public class Application extends javafx.application.Application {
                     Note note = cellData.getValue();
                     return new SimpleStringProperty(String.join("\n", note.entries().getOrDefault(columnName, List.of())));
                 });
+
+                col.setMaxWidth(300);
 
                 notesTable.getColumns().add(col);
             });
