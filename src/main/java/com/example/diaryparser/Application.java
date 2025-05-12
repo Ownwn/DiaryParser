@@ -18,7 +18,7 @@ import java.util.Set;
 
 public class Application extends javafx.application.Application {
 
-    private static TableView<String> notesTable;
+    private static TableView<Note> notesTable;
 
     public static void main(String[] args) {
         launch();
@@ -35,9 +35,9 @@ public class Application extends javafx.application.Application {
         ObservableList<String> fileNames = FXCollections.observableArrayList();
         ListView<String> items = new ListView<>(fileNames);
 
-        Set<String> colNames = new HashSet<>();
 
-        Button loadFiles = getLoadFilesButton(stage, fileNames, colNames);
+
+        Button loadFiles = getLoadFilesButton(stage);
 
 
 
@@ -51,28 +51,33 @@ public class Application extends javafx.application.Application {
         stage.show();
     }
 
-    private static Button getLoadFilesButton(Stage stage, ObservableList<String> fileNames, Set<String> colNames) {
+    private static Button getLoadFilesButton(Stage stage) {
         Button loadFiles = new Button("Load files");
+
+        Set<String> colNames = new HashSet<>();
+
         loadFiles.setOnAction(_ -> {
             List<File> files = DiaryParser.loadFiles(stage);
+            notesTable.getColumns().clear();
 
-            fileNames.clear();
-
-            var allNotes = DiaryParser.getNotes(files)
-                    .<String>mapMulti((n, c) -> {
-                        colNames.addAll(n.entries().keySet());
-                        n.entries().values().stream().map(e -> String.join("", e)).forEach(c);
-                    })
-                    .toList();
-
-            notesTable.setItems(FXCollections.observableList(allNotes));
+            var allNotes = DiaryParser.getNotes(files).<Note>mapMulti((note, c) -> {
+                colNames.addAll(note.entries().keySet());
+                c.accept(note);
+            }).toList();
 
 
-            colNames.forEach(name -> {
-                TableColumn<String, String> col = new TableColumn<>(name);
-                col.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue()));
+            colNames.forEach(columnName -> {
+                TableColumn<Note, String> col = new TableColumn<>(columnName);
+
+                col.setCellValueFactory(cellData -> {
+                    Note note = cellData.getValue();
+                    return new SimpleStringProperty(String.join("\n", note.entries().getOrDefault(columnName, List.of())));
+                });
+
                 notesTable.getColumns().add(col);
             });
+            notesTable.setItems(FXCollections.observableArrayList(allNotes));
+
         });
         return loadFiles;
     }

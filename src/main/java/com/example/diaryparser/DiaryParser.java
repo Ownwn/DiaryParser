@@ -72,8 +72,4 @@ public class DiaryParser {
 
         return new Note(entries);
     }
-
-    // map of headings, and all lines of text under heading
-    public record Note(Map<String, List<String>> entries) {
-    }
 }
