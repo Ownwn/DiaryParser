@@ -10,11 +10,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class DiaryParser {
 
-    public static void listFiles(List<File> files) {
-        List<Note> notes = files.stream().map(DiaryParser::parseFile).toList();
+    public static Stream<Note> getNotes(List<File> files) {
+        return files.stream().map(DiaryParser::parseFile);
     }
 
     public static List<File> loadFiles(Stage stage) {
@@ -73,6 +74,6 @@ public class DiaryParser {
     }
 
     // map of headings, and all lines of text under heading
-    record Note(Map<String, List<String>> entries) {
+    public record Note(Map<String, List<String>> entries) {
     }
 }
