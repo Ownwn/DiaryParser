@@ -12,6 +12,8 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 public class Application extends javafx.application.Application {
 
@@ -39,7 +41,7 @@ public class Application extends javafx.application.Application {
 
 
         VBox root = new VBox(10);
-        root.getChildren().addAll(loadFiles, items, notesTable);
+        root.getChildren().addAll(loadFiles, items, notesTable, getSearchBox());
 
         Scene scene = new Scene(root, 600, 240);
 
@@ -48,6 +50,51 @@ public class Application extends javafx.application.Application {
         stage.setWidth(1000);
         stage.setHeight(700);
         stage.show();
+    }
+
+    private static TextField getSearchBox() {
+        TextField searchBox = new TextField();
+        searchBox.setPromptText("Regex filter...");
+
+
+
+        searchBox.setOnKeyTyped(_ -> {
+            String text = searchBox.getText();
+            if (text == null) {
+                return;
+            }
+            Pattern p;
+            try {
+                p = Pattern.compile(text);
+            } catch (PatternSyntaxException e) {
+                searchBox.setText("Failed to compile regex! " + e.getDescription());
+                return;
+            }
+
+            // todo remove empty elements
+
+            notesTable.getColumns().forEach(column -> {
+                // There must be a better way than cast trickery right?
+                TableColumn<Note, String> typedColumn = (TableColumn<Note, String>) column;
+                typedColumn.setCellValueFactory(cellData -> {
+                    Note note = cellData.getValue();
+                    String content = String.join("\n", note.entries().getOrDefault(typedColumn.getText(), List.of()));
+                    if (!p.matcher(content).find()) {
+                        return new SimpleStringProperty("");
+                    }
+                    return new SimpleStringProperty(content);
+                });
+            });
+            notesTable.refresh();
+
+
+
+
+
+
+        });
+
+        return searchBox;
     }
 
     private static Button getLoadFilesButton(Stage stage) {
