@@ -6,10 +6,7 @@ import javafx.stage.Stage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Stream;
 
 public class DiaryParser {
@@ -18,19 +15,34 @@ public class DiaryParser {
         return files.stream().map(DiaryParser::parseFile);
     }
 
-    public static List<File> loadFiles(Stage stage) {
+    public static List<File> loadFiles(Stage stage, boolean recursive) {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("Choose notes directory");
         File directory = directoryChooser.showDialog(stage);
         if (directory == null || !directory.exists() || !directory.isDirectory()) {
             throw new IllegalArgumentException("Invalid directory");
         }
-        File[] files = directory.listFiles((dir, name) -> name.endsWith(".md"));
-        if (files == null || files.length == 0) {
-            throw new IllegalArgumentException("Loading files failed");
-        }
 
-        return List.of(files);
+
+        if (recursive) {
+           return getChildrenRecursively(directory).filter(f -> f.getName().endsWith(".md")).toList();
+        } else {
+            File[] filesArray = directory.listFiles((dir, name) -> name.endsWith(".md"));
+            assert filesArray != null;
+            return List.of(filesArray);
+        }
+    }
+
+    public static Stream<File> getChildrenRecursively(File file) {
+        return Stream.of(file).mapMulti((f, c) -> {
+           c.accept(f);
+           if (file.isDirectory()) {
+               File[] files = file.listFiles();
+               if (files != null) {
+                   Arrays.stream(files).flatMap(DiaryParser::getChildrenRecursively).forEach(c);
+               }
+           }
+        });
     }
 
     public static Note parseFile(File file) {
