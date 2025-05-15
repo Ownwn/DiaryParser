@@ -59,14 +59,14 @@ public class DiaryParser {
 
         List<String> content = new ArrayList<>();
         Map<String, List<String>> entries = new LinkedHashMap<>();
-        String headingName = null;
+        String headingName = "Unknown";
 
         for (String line : lines) {
             boolean isHeading = line.startsWith("## ");
             if (isHeading) {
-                if (headingName != null) {
-                    entries.put(headingName, content);
-                }
+
+                entries.put(headingName, content);
+
 
                 headingName = line.substring(3);
 
@@ -82,6 +82,6 @@ public class DiaryParser {
         }
         entries.put(headingName, content);
 
-        return new Note(entries);
+        return new Note(file.getName(), entries);
     }
 }

@@ -8,17 +8,18 @@ import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 import java.io.File;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 
 public class Interface {
 
     public static TextField getSearchBox() {
         TextField searchBox = new TextField();
         searchBox.setPromptText("Regex filter...");
-        searchBox.setPrefHeight(150);
+        searchBox.setPrefHeight(20);
+        searchBox.setPrefWidth(160);
 
 
         searchBox.setOnKeyTyped(_ -> {
@@ -62,19 +63,63 @@ public class Interface {
         return searchBox;
     }
 
-    private static void loadFiles(Stage stage, boolean recursive) {
-        List<File> files = DiaryParser.loadFiles(stage, recursive);
+    public static TextField getMergeBox() {
+        TextField mergeBox = new TextField();
+        mergeBox.setPromptText("Merge");
+        mergeBox.setPrefHeight(20);
+        mergeBox.setPrefWidth(160);
+
+        mergeBox.setOnAction(_ -> {
+            String text = mergeBox.getText();
+            if (text == null || text.isEmpty()) {
+                return;
+            }
+            recomputeColumns(text.toLowerCase());
+
+            mergeBox.clear();
+        });
+
+        return mergeBox;
+    }
+
+    private static void recomputeColumns(String startsWith) {
+        Set<String> toMerge = Application.colNames.stream()
+                .filter(name -> name.toLowerCase().startsWith(startsWith))
+                .collect(Collectors.toSet());
+
+        String newColumnName = "placeholder";
+        Application.colNames.removeAll(toMerge);
+        Application.colNames.add(newColumnName);
+
+        List<Note> mergedNotes = Application.allNotes.stream()
+                .map(note -> {
+                    Map<String, List<String>> entries = new LinkedHashMap<>(note.entries());
+
+                    List<String> mergedContent = toMerge.stream()
+                            .flatMap(colName -> entries.getOrDefault(colName, List.of()).stream())
+                            .toList();
+
+                    entries.put(newColumnName, mergedContent);
+
+                    return new Note(note.date(), entries);
+                })
+                .toList();
+
+        Application.allNotes = mergedNotes;
         Application.notesTable.getColumns().clear();
-        Application.colNames = new HashSet<>();
 
+        updateNotesTable();
 
+    }
+
+    private static void loadALlNotes(List<File> files) {
         Application.allNotes = DiaryParser.getNotes(files).<Note>mapMulti((note, c) -> {
             Application.colNames.addAll(note.entries().keySet());
             c.accept(note);
         }).toList();
+    }
 
-
-
+    private static void updateNotesTable() {
         Application.colNames.forEach(columnName -> {
             TableColumn<Note, String> col = new TableColumn<>(columnName);
 
@@ -88,6 +133,16 @@ public class Interface {
             Application.notesTable.getColumns().add(col);
         });
         Application.notesTable.setItems(FXCollections.observableArrayList(Application.allNotes));
+    }
+
+    private static void loadFiles(Stage stage, boolean recursive) {
+        List<File> files = DiaryParser.loadFiles(stage, recursive);
+        Application.notesTable.getColumns().clear();
+        Application.colNames = new HashSet<>();
+
+        loadALlNotes(files);
+
+        updateNotesTable();
     }
 
     public static Button getRecursiveLoadFilesButton(Stage stage) {

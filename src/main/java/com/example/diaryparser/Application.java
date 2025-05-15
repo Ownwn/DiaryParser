@@ -1,12 +1,10 @@
 package com.example.diaryparser;
 
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.ListView;
 import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -32,17 +30,21 @@ public class Application extends javafx.application.Application {
         notesTable = new TableView<>();
 
 
-        ObservableList<String> fileNames = FXCollections.observableArrayList();
-        ListView<String> items = new ListView<>(fileNames);
-
-
+        HBox loadButtons = new HBox(6);
         Button loadFiles = Interface.getLoadFilesButton(stage);
         Button loadFilesRecursive = Interface.getRecursiveLoadFilesButton(stage);
-        TextField searchBox = Interface.getSearchBox();
+        loadButtons.getChildren().addAll(loadFiles, loadFilesRecursive);
 
+        VBox tableBox = new VBox(10);
+        tableBox.getChildren().addAll(notesTable);
 
-        VBox root = new VBox(10);
-        root.getChildren().addAll(loadFiles, loadFilesRecursive, notesTable, searchBox);
+        VBox dataButtons = new VBox(5);
+        dataButtons.setMaxWidth(Region.USE_PREF_SIZE);
+        dataButtons.getChildren().addAll(Interface.getSearchBox(), Interface.getMergeBox());
+
+        VBox root = new VBox();
+
+        root.getChildren().addAll(loadButtons, tableBox, dataButtons);
 
         Scene scene = new Scene(root, 600, 240);
 

@@ -4,5 +4,5 @@ import java.util.List;
 import java.util.Map;
 
 // map of headings, and all lines of text under heading
-public record Note(Map<String, List<String>> entries) {
+public record Note(String date, Map<String, List<String>> entries) {
 }
