@@ -5,6 +5,7 @@ import javafx.collections.FXCollections;
 import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 
 import java.io.File;
@@ -28,19 +29,15 @@ public class Interface {
                 Application.notesTable.setItems(FXCollections.observableArrayList(Application.allNotes));
                 return;
             }
-            Pattern p;
-            try {
-                p = Pattern.compile(text.toLowerCase());
-                searchBox.setStyle("-fx-text-fill: black;");
-            } catch (PatternSyntaxException e) {
-                searchBox.setStyle("-fx-text-fill: red;");
+            Optional<Pattern> p = tryCompileText(searchBox);
+            if (p.isEmpty()) {
                 return;
             }
 
             List<Note> filteredNotes = Application.allNotes.stream()
                     .filter(note -> Application.colNames.stream()
                             .map(name -> String.join("\n", note.entries().getOrDefault(name, List.of())))
-                            .anyMatch(content -> p.matcher(content.toLowerCase()).find()))
+                            .anyMatch(content -> p.get().matcher(content.toLowerCase()).find()))
                     .toList();
 
 
@@ -63,6 +60,17 @@ public class Interface {
         return searchBox;
     }
 
+    private static Optional<Pattern> tryCompileText(TextField box) {
+        try {
+            Pattern p = Pattern.compile(box.getText().toLowerCase());
+            box.setStyle("-fx-text-fill: black;");
+            return Optional.of(p);
+        } catch (PatternSyntaxException e) {
+            box.setStyle("-fx-text-fill: red;");
+            return Optional.empty();
+        }
+    }
+
     public static TextField getMergeBox() {
         TextField mergeBox = new TextField();
         mergeBox.setPromptText("Merge");
@@ -80,6 +88,25 @@ public class Interface {
         });
 
         return mergeBox;
+    }
+
+    public static HBox graphTools() {
+        HBox box = new HBox(4);
+        Button button = new Button("Graph");
+        TextField textField = new TextField();
+        textField.setPrefWidth(200);
+        box.getChildren().addAll(button, textField);
+        textField.setPromptText("Regex group to graph (numerical)");
+
+        button.setOnAction(_ -> {
+            Optional<Pattern> p = tryCompileText(textField);
+            if (p.isEmpty()) {
+                return;
+            }
+            new GraphViewer(p.get());
+        });
+
+        return box;
     }
 
     private static void recomputeColumns(String startsWith) {

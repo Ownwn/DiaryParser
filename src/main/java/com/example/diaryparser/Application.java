@@ -44,7 +44,7 @@ public class Application extends javafx.application.Application {
 
         VBox root = new VBox();
 
-        root.getChildren().addAll(loadButtons, tableBox, dataButtons);
+        root.getChildren().addAll(loadButtons, tableBox, dataButtons, Interface.graphTools());
 
         Scene scene = new Scene(root, 600, 240);
 
