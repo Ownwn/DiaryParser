@@ -3,25 +3,28 @@ package com.example.diaryparser;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Gatherers;
 
 public record GraphViewer(Pattern pattern) {
     private static final int WIDTH = 700;
-    private static final int SCALE = 3;
+    private static final int SCALE = 5;
 
     public GraphViewer {
 
         Pane pane = new Pane();
         draw(pane, pattern);
 
-        Scene scene = new Scene(pane, 600, 240);
+        Scene scene = new Scene(pane, WIDTH, 240);
         Stage stage = new Stage();
         stage.setScene(scene);
 
@@ -31,6 +34,11 @@ public record GraphViewer(Pattern pattern) {
         stage.setWidth(WIDTH);
         stage.setHeight(500);
         stage.show();
+    }
+
+    private final double getYScale(double max, double min, double value) {
+        double range = max - min;
+        return 400 - (max * (value - min) / range) * SCALE;
     }
 
     private void draw(Pane root, Pattern pattern) {
@@ -57,25 +65,45 @@ public record GraphViewer(Pattern pattern) {
 
         double min = Collections.min(matches);
         double max = Collections.max(matches);
-        double range = max - min;
 
         int noteWidth = WIDTH / numRelevant;
 
-        double previous = min;
-        for (int i = 0; i < numRelevant; i++) {
-            double x = i * noteWidth;
-            double y = max * (matches.get(i) - min) / range;
+        // funny gatherer
+        AtomicInteger i = new AtomicInteger();
+        matches.stream()
+                .gather(Gatherers.windowSliding(2))
+                .forEach(list -> {
+                    double x = i.get() * noteWidth;
 
 
-            Line line = new Line(x, 300 - previous * SCALE, x + noteWidth, 300 - y * SCALE);
-            line.setStroke(y - previous > 0 ? Color.RED : Color.BLUE);
-            root.getChildren().add(line);
+                    double y = getYScale(max, min, list.get(1));
+                    double previousY = getYScale(max, min, list.get(0));
 
-            previous = y;
-        }
+                    Circle point = new Circle(x + noteWidth, y - noteWidth/2d, 2);
+
+                    Line line = new Line(x, previousY, x + noteWidth, y);
+                    line.setStroke(y - previousY > 0 ? Color.RED : Color.BLUE);
+                    root.getChildren().addAll(line, point);
+
+                    i.getAndIncrement();
+                });
+
+        Text text = new Text(100, 100, "");
+
+        root.setOnMouseMoved(e -> {
+            int numIndex = (int) (e.getX() / noteWidth);
+            if (numIndex < numRelevant) {
+                double value = matches.get(numIndex);
+                text.setText(String.valueOf(value));
+                text.setX(e.getX());
+                text.setY(getYScale(max, min, value));
+            } else {
+                text.setText("");
+            }
+        });
 
 
-        root.getChildren().add(new Text(String.valueOf(matches.size())));
+        root.getChildren().add(text);
 
     }
 }
