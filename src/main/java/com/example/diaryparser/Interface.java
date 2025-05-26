@@ -98,6 +98,10 @@ public class Interface {
         box.getChildren().addAll(button, textField);
         textField.setPromptText("Regex group to graph (numerical)");
 
+        textField.setOnKeyTyped(_ -> {
+            tryCompileText(textField);
+        });
+
         button.setOnAction(_ -> {
             Optional<Pattern> p = tryCompileText(textField);
             if (p.isEmpty()) {
