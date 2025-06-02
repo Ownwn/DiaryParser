@@ -66,20 +66,20 @@ public record GraphViewer(Pattern pattern) {
         double min = Collections.min(matches);
         double max = Collections.max(matches);
 
-        int noteWidth = WIDTH / numRelevant;
+        double noteWidth = (WIDTH - 40d) / numRelevant;
 
         // funny gatherer
         AtomicInteger i = new AtomicInteger();
         matches.stream()
                 .gather(Gatherers.windowSliding(2))
                 .forEach(list -> {
-                    double x = i.get() * noteWidth;
+                    double x = 20 + i.get() * noteWidth;
 
 
                     double y = getYScale(max, min, list.get(1));
                     double previousY = getYScale(max, min, list.get(0));
 
-                    Circle point = new Circle(x + noteWidth, y - noteWidth/2d, 2);
+                    Circle point = new Circle(x + noteWidth, y - noteWidth / 2d, 2);
 
                     Line line = new Line(x, previousY, x + noteWidth, y);
                     line.setStroke(y - previousY > 0 ? Color.RED : Color.BLUE);
