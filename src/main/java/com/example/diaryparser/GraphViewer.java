@@ -36,7 +36,7 @@ public record GraphViewer(Pattern pattern) {
         stage.show();
     }
 
-    private final double getYScale(double max, double min, double value) {
+    private double getYScale(double max, double min, double value) {
         double range = max - min;
         return 400 - (max * (value - min) / range) * SCALE;
     }
@@ -49,7 +49,7 @@ public record GraphViewer(Pattern pattern) {
                     if (matcher.find() && matcher.groupCount() >= 1) {
                         try {
                             double value = Double.parseDouble(matcher.group(1));
-                            c.accept(new GraphPoint(value, note.date()));
+                            c.accept(new GraphPoint(value, note.date().substring(0, note.date().length()-3), matcher.group(0)));
                         } catch (NumberFormatException e) {
                             // todo
 
@@ -96,21 +96,25 @@ public record GraphViewer(Pattern pattern) {
         Line visualiserLine = new Line(-1, -1, -1, -1);
 
         root.setOnMouseMoved(e -> {
-            int numIndex = (int) ((e.getX() - (PADDING/2d)) / noteWidth);
+            int numIndex = (int) ((e.getX() - (PADDING/2d) + 4) / noteWidth);
             if (numIndex < numRelevant && numIndex >= 0) {
                 GraphPoint point = matches.get(numIndex);
 
-                visualiserLine.setStartX(e.getX());
-                visualiserLine.setEndX(e.getX());
+                double lineX = (PADDING/2d) + numIndex * noteWidth;
+
+                visualiserLine.setVisible(true);
+                visualiserLine.setStartX(lineX);
+                visualiserLine.setEndX(lineX);
 
                 visualiserLine.setStartY(0);
                 visualiserLine.setEndY(root.getHeight() - 30);
 
-                text.setText(point.value() + "\n" + point.date());
-                text.setX(e.getX());
+                text.setText(point.allContent() + "\n" + point.date());
+                text.setX(lineX + 5);
                 text.setY(root.getHeight() - 30);
             } else {
                 text.setText("");
+                visualiserLine.setVisible(false);
             }
         });
 
@@ -119,7 +123,7 @@ public record GraphViewer(Pattern pattern) {
 
     }
 
-    record GraphPoint(Double value, String date) implements Comparable<GraphPoint> {
+    record GraphPoint(Double value, String date, String allContent) implements Comparable<GraphPoint> {
         @Override
         public int compareTo(GraphPoint o) {
             return value().compareTo(o.value());
