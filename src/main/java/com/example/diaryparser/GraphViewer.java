@@ -1,6 +1,7 @@
 package com.example.diaryparser;
 
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -23,6 +24,7 @@ public record GraphViewer(Pattern pattern) {
 
         Pane pane = new Pane();
         draw(pane, pattern);
+        addAveragePlotButton(pane);
 
         Scene scene = new Scene(pane, WIDTH, 240);
         Stage stage = new Stage();
@@ -41,20 +43,31 @@ public record GraphViewer(Pattern pattern) {
         return 400 - (max * (value - min) / range) * SCALE;
     }
 
+    private void addAveragePlotButton(Pane pane) {
+        Button button = new Button("Show average trend line");
+
+        pane.getChildren().add(button);
+    }
+
+    
+
     private void draw(Pane root, Pattern pattern) {
         List<GraphPoint> matches = Application.allNotes.stream()
                 .<GraphPoint>mapMulti((note, c) -> {
                     Matcher matcher = pattern.matcher(note.totalContent());
+                    String date = note.date().substring(0, note.date().length() - 3);
 
                     if (matcher.find() && matcher.groupCount() >= 1) {
                         try {
                             double value = Double.parseDouble(matcher.group(1));
-                            c.accept(new GraphPoint(value, note.date().substring(0, note.date().length()-3), matcher.group(0)));
+                            c.accept(new GraphPoint(value, date, matcher.group(0), true));
                         } catch (NumberFormatException e) {
-                            // todo
+                            throw new RuntimeException("Error parsing regex number!");
 
                         }
 
+                    } else {
+                        c.accept(new GraphPoint(null, date, "Missing!", false));
                     }
                 })
                 .toList();
@@ -67,8 +80,8 @@ public record GraphViewer(Pattern pattern) {
             return;
         }
 
-        double min = matches.stream().mapToDouble(GraphPoint::value).min().getAsDouble();
-        double max = matches.stream().mapToDouble(GraphPoint::value).max().getAsDouble();
+        double min = matches.stream().filter(GraphPoint::valid).mapToDouble(GraphPoint::value).min().getAsDouble();
+        double max = matches.stream().filter(GraphPoint::valid).mapToDouble(GraphPoint::value).max().getAsDouble();
 
         double noteWidth = (WIDTH - PADDING) / numRelevant;
 
@@ -79,15 +92,20 @@ public record GraphViewer(Pattern pattern) {
                 .forEach(list -> {
                     double x = (PADDING/2d) + i.get() * noteWidth;
 
+                    if (list.get(1).valid()) {
+                        double y = getYScale(max, min, list.get(1).value());
+                        Circle point = new Circle(x + noteWidth, y - noteWidth / 2d, 2);
 
-                    double y = getYScale(max, min, list.get(1).value());
-                    double previousY = getYScale(max, min, list.get(0).value());
+                        if (list.get(0).valid()) {
+                            double previousY = getYScale(max, min, list.get(0).value());
+                            Line line = new Line(x, previousY, x + noteWidth, y);
+                            line.setStroke(y - previousY > 0 ? Color.RED : Color.BLUE);
+                            root.getChildren().add(line);
+                        }
 
-                    Circle point = new Circle(x + noteWidth, y - noteWidth / 2d, 2);
+                        root.getChildren().addAll(point);
+                    }
 
-                    Line line = new Line(x, previousY, x + noteWidth, y);
-                    line.setStroke(y - previousY > 0 ? Color.RED : Color.BLUE);
-                    root.getChildren().addAll(line, point);
 
                     i.getAndIncrement();
                 });
@@ -123,7 +141,7 @@ public record GraphViewer(Pattern pattern) {
 
     }
 
-    record GraphPoint(Double value, String date, String allContent) implements Comparable<GraphPoint> {
+    record GraphPoint(Double value, String date, String allContent, boolean valid) implements Comparable<GraphPoint> {
         @Override
         public int compareTo(GraphPoint o) {
             return value().compareTo(o.value());
