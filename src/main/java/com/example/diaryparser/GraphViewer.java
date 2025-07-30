@@ -9,6 +9,7 @@ import javafx.scene.shape.Line;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
@@ -49,7 +50,6 @@ public record GraphViewer(Pattern pattern) {
         pane.getChildren().add(button);
     }
 
-    
 
     private void draw(Pane root, Pattern pattern) {
         List<GraphPoint> matches = Application.allNotes.stream()
@@ -85,40 +85,27 @@ public record GraphViewer(Pattern pattern) {
 
         double noteWidth = (WIDTH - PADDING) / numRelevant;
 
-        // funny gatherer
-        AtomicInteger i = new AtomicInteger();
-        matches.stream()
-                .gather(Gatherers.windowSliding(2))
-                .forEach(list -> {
-                    double x = (PADDING/2d) + i.get() * noteWidth;
+        List<DrawPoint> drawPoints = getDrawPoints(matches, max, min, noteWidth);
 
-                    if (list.get(1).valid()) {
-                        double y = getYScale(max, min, list.get(1).value());
-                        Circle point = new Circle(x + noteWidth, y - noteWidth / 2d, 2);
+        drawPoints.forEach(d -> {
+            root.getChildren().add(d.circle);
+            if (d.line != null) {
+                Line line = d.line;
+                line.setStroke(line.getEndY() - line.getStartY() > 0 ? Color.RED : Color.BLUE);
+                root.getChildren().add(line);
+            }
+        });
 
-                        if (list.get(0).valid()) {
-                            double previousY = getYScale(max, min, list.get(0).value());
-                            Line line = new Line(x, previousY, x + noteWidth, y);
-                            line.setStroke(y - previousY > 0 ? Color.RED : Color.BLUE);
-                            root.getChildren().add(line);
-                        }
-
-                        root.getChildren().addAll(point);
-                    }
-
-
-                    i.getAndIncrement();
-                });
 
         Text text = new Text(100, 100, "");
         Line visualiserLine = new Line(-1, -1, -1, -1);
 
         root.setOnMouseMoved(e -> {
-            int numIndex = (int) ((e.getX() - (PADDING/2d) + 4) / noteWidth);
+            int numIndex = (int) ((e.getX() - (PADDING / 2d) + 4) / noteWidth);
             if (numIndex < numRelevant && numIndex >= 0) {
                 GraphPoint point = matches.get(numIndex);
 
-                double lineX = (PADDING/2d) + numIndex * noteWidth;
+                double lineX = (PADDING / 2d) + numIndex * noteWidth;
 
                 visualiserLine.setVisible(true);
                 visualiserLine.setStartX(lineX);
@@ -140,6 +127,39 @@ public record GraphViewer(Pattern pattern) {
         root.getChildren().addAll(text, visualiserLine);
 
     }
+
+    public List<DrawPoint> getDrawPoints(List<GraphPoint> matches, double max, double min, double noteWidth) {
+        List<DrawPoint> points = new ArrayList<>();
+        // funny gatherer
+        AtomicInteger i = new AtomicInteger();
+        matches.stream()
+                .gather(Gatherers.windowSliding(2))
+                .forEach(list -> {
+                    double x = (PADDING / 2d) + i.get() * noteWidth;
+
+                    if (list.get(1).valid()) {
+                        double y = getYScale(max, min, list.get(1).value());
+                        Circle circle = new Circle(x + noteWidth, y - noteWidth / 2d, 2);
+                        DrawPoint point = new DrawPoint(null, circle);
+                        if (list.getFirst().valid()) {
+
+                            double previousY = getYScale(max, min, list.getFirst().value());
+
+                            Line line = new Line(x, previousY, x + noteWidth, y);
+                            point = new DrawPoint(line, circle);
+                        }
+                        points.add(point);
+                    }
+
+
+                    i.getAndIncrement();
+                });
+        return points;
+    }
+
+    record DrawPoint(Line line, Circle circle) {
+    }
+
 
     record GraphPoint(Double value, String date, String allContent, boolean valid) implements Comparable<GraphPoint> {
         @Override
