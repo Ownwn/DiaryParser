@@ -1,13 +1,17 @@
 package com.example.diaryparser;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +29,6 @@ public record GraphViewer(Pattern pattern) {
 
         Pane pane = new Pane();
         draw(pane, pattern);
-        addAveragePlotButton(pane);
 
         Scene scene = new Scene(pane, WIDTH, 240);
         Stage stage = new Stage();
@@ -44,14 +47,7 @@ public record GraphViewer(Pattern pattern) {
         return 400 - (max * (value - min) / range) * SCALE;
     }
 
-    private void addAveragePlotButton(Pane pane) {
-        Button button = new Button("Show average trend line");
-
-        pane.getChildren().add(button);
-    }
-
-
-    private void draw(Pane root, Pattern pattern) {
+    public List<GraphPoint> findDrawPoints(Pattern pattern) {
         List<GraphPoint> matches = Application.allNotes.stream()
                 .<GraphPoint>mapMulti((note, c) -> {
                     Matcher matcher = pattern.matcher(note.totalContent());
@@ -71,6 +67,13 @@ public record GraphViewer(Pattern pattern) {
                     }
                 })
                 .toList();
+        return matches;
+    }
+
+
+    private void draw(Pane root, Pattern pattern) {
+        List<GraphPoint> matches = findDrawPoints(pattern);
+
         int numRelevant = matches.size();
         if (numRelevant == 0) {
             Text emptyText = new Text("No files matched!");
@@ -87,14 +90,10 @@ public record GraphViewer(Pattern pattern) {
 
         List<DrawPoint> drawPoints = getDrawPoints(matches, max, min, noteWidth);
 
-        drawPoints.forEach(d -> {
-            root.getChildren().add(d.circle);
-            if (d.line != null) {
-                Line line = d.line;
-                line.setStroke(line.getEndY() - line.getStartY() > 0 ? Color.RED : Color.BLUE);
-                root.getChildren().add(line);
-            }
-        });
+
+
+
+        playDataAnimation(drawPoints, root);
 
 
         Text text = new Text(100, 100, "");
@@ -117,6 +116,7 @@ public record GraphViewer(Pattern pattern) {
                 text.setText(point.allContent() + "\n" + point.date());
                 text.setX(lineX + 5);
                 text.setY(root.getHeight() - 30);
+                visualiserLine.setOpacity(0.2d);
             } else {
                 text.setText("");
                 visualiserLine.setVisible(false);
@@ -126,6 +126,54 @@ public record GraphViewer(Pattern pattern) {
 
         root.getChildren().addAll(text, visualiserLine);
 
+    }
+
+    public void playDataAnimation(List<DrawPoint> drawPoints, Pane root) {
+        Timeline t = getTimeline(drawPoints, root);
+
+        Button skip = new Button("Skip Animation");
+        skip.setOnAction(_ -> {
+            t.setRate(200d);
+            t.play();
+        });
+
+        Button pause = new Button("Pause Animation");
+        pause.setOnAction(_ -> t.pause());
+
+        Button play = new Button("Play Animation");
+        play.setOnAction(_ -> t.play());
+
+        Button replay = new Button("Replay");
+        replay.setOnAction(_ -> {
+
+        });
+
+
+        HBox buttons = new HBox(5);
+        buttons.getChildren().addAll(pause, play, skip);
+        root.getChildren().add(buttons);
+
+        t.setCycleCount(drawPoints.size());
+        t.setRate(10d);
+        t.play();
+    }
+
+    private static Timeline getTimeline(List<DrawPoint> drawPoints, Pane root) {
+        AtomicInteger i = new AtomicInteger(0);
+
+        return new Timeline(
+                new KeyFrame(Duration.seconds(1), _ -> {
+
+                    DrawPoint d = drawPoints.get(i.getAndIncrement());
+
+                    root.getChildren().add(d.circle);
+                    if (d.line != null) {
+                        Line line = d.line;
+                        line.setStroke(line.getEndY() - line.getStartY() > 0 ? Color.RED : Color.BLUE);
+                        root.getChildren().add(line);
+                    }
+                })
+        );
     }
 
     public List<DrawPoint> getDrawPoints(List<GraphPoint> matches, double max, double min, double noteWidth) {
