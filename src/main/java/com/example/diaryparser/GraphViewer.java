@@ -22,7 +22,6 @@ import java.util.stream.Gatherers;
 
 public record GraphViewer(Pattern pattern) {
     private static final int WIDTH = 700;
-    private static final int SCALE = 5;
     private static final double PADDING = 40;
 
     public GraphViewer {
@@ -44,7 +43,7 @@ public record GraphViewer(Pattern pattern) {
 
     private double getYScale(double max, double min, double value) {
         double range = max - min;
-        return 400 - (max * (value - min) / range) * SCALE;
+        return 440 - ((value - min) / range) * 400;
     }
 
     public List<GraphPoint> findDrawPoints(Pattern pattern) {

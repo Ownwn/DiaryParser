@@ -62,7 +62,7 @@ public class Interface {
 
     private static Optional<Pattern> tryCompileText(TextField box) {
         try {
-            Pattern p = Pattern.compile(box.getText().toLowerCase());
+            Pattern p = Pattern.compile(box.getText().toLowerCase(), Pattern.MULTILINE);
             box.setStyle("-fx-text-fill: black;");
             return Optional.of(p);
         } catch (PatternSyntaxException e) {

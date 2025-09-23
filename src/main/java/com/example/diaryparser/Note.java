@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 public record Note(String date, Map<String, List<String>> entries) {
     public String totalContent() {
         return entries().values().stream()
-                .map(e -> String.join(" ", e))
-                .collect(Collectors.joining(" "));
+                .map(e -> String.join("\n", e))
+                .collect(Collectors.joining("\n"));
     }
 }
