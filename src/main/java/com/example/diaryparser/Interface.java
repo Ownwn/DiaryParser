@@ -10,6 +10,7 @@ import javafx.stage.Stage;
 
 import java.io.File;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -34,30 +35,34 @@ public class Interface {
                 return;
             }
 
-            List<Note> filteredNotes = Application.allNotes.stream()
-                    .filter(note -> Application.colNames.stream()
-                            .map(name -> String.join("\n", note.entries().getOrDefault(name, List.of())))
-                            .anyMatch(content -> p.get().matcher(content.toLowerCase()).find()))
-                    .toList();
-
-
-            Application.notesTable.setItems(FXCollections.observableList(filteredNotes));
-
-            Application.notesTable.getColumns().forEach(column -> {
-                // There must be a better way than cast trickery right?
-                TableColumn<Note, String> typedColumn = (TableColumn<Note, String>) column;
-                typedColumn.setCellValueFactory(cellData -> {
-                    Note note = cellData.getValue();
-                    String content = String.join("\n", note.entries().getOrDefault(typedColumn.getText(), List.of()));
-
-                    return new SimpleStringProperty(content);
-                });
-            });
-
-            Application.notesTable.refresh();
+            filterNotes(s -> p.get().matcher(s.toLowerCase()).find());
         });
 
         return searchBox;
+    }
+
+    private static void filterNotes(Predicate<String> predicate) {
+        List<Note> filteredNotes = Application.allNotes.stream()
+                .filter(note -> Application.colNames.stream()
+                        .map(name -> String.join("\n", note.entries().getOrDefault(name, List.of())))
+                        .anyMatch(predicate))
+                .toList();
+
+
+        Application.notesTable.setItems(FXCollections.observableList(filteredNotes));
+
+        Application.notesTable.getColumns().forEach(column -> {
+            // There must be a better way than cast trickery right?
+            TableColumn<Note, String> typedColumn = (TableColumn<Note, String>) column;
+            typedColumn.setCellValueFactory(cellData -> {
+                Note note = cellData.getValue();
+                String content = String.join("\n", note.entries().getOrDefault(typedColumn.getText(), List.of()));
+
+                return new SimpleStringProperty(content);
+            });
+        });
+
+        Application.notesTable.refresh();
     }
 
     private static Optional<Pattern> tryCompileText(TextField box) {
@@ -88,6 +93,24 @@ public class Interface {
         });
 
         return mergeBox;
+    }
+
+    public static TextField getFuzzyFindBox() {
+        TextField findBox = new TextField();
+        findBox.setPromptText("Fuzzy Find");
+        findBox.setPrefHeight(20);
+        findBox.setPrefWidth(160);
+
+        findBox.setOnKeyTyped(_ -> {
+            String text = findBox.getText();
+            if (text == null || text.isBlank()) {
+                Application.notesTable.setItems(FXCollections.observableArrayList(Application.allNotes));
+                return;
+            }
+            filterNotes(s -> StringHelper.checkSimilar(text.toLowerCase(), s.toLowerCase()));
+        });
+
+        return findBox;
     }
 
     public static HBox graphTools() {

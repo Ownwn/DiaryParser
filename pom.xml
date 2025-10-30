@@ -64,7 +64,7 @@
                         <!-- Default configuration for running with: mvn clean javafx:run -->
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>com.ownwn.demo/com.ownwn.demo.HelloApplication</mainClass>
+                            <mainClass>com.ownwn.diaryparser/com.ownwn.diaryparser.DiaryParser</mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
                             <jlinkImageName>app</jlinkImageName>

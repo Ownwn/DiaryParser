@@ -40,7 +40,7 @@ public class Application extends javafx.application.Application {
 
         VBox dataButtons = new VBox(5);
         dataButtons.setMaxWidth(Region.USE_PREF_SIZE);
-        dataButtons.getChildren().addAll(Interface.getSearchBox(), Interface.getMergeBox());
+        dataButtons.getChildren().addAll(Interface.getSearchBox(), Interface.getMergeBox(), Interface.getFuzzyFindBox());
 
         VBox root = new VBox();
 
