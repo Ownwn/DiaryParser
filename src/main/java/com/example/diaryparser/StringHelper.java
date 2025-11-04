@@ -7,37 +7,23 @@ import java.util.stream.Collectors;
 
 public class StringHelper {
 
-    public static boolean checkSimilar(String a, String b) {
-        if (Objects.equals(a, b)) return true;
-        if (a.isBlank() || b.isBlank()) return false;
+    public static boolean fuzzy(String needle, String haystack) {
+        if (Objects.equals(needle, haystack)) return true;
+        needle = needle.toLowerCase();
+        haystack = haystack.toLowerCase();
 
-        if (a.startsWith(b) || b.startsWith(a)) return true;
+        if (needle.length() > haystack.length()) return false;
 
-        String lon; String sho;
+        if (needle.isEmpty()) return true;
+        if (haystack.isBlank()) return false;
 
-        if (a.length() >= b.length()) {
-            lon = a;
-            sho = b;
-        } else {
-            lon = b;
-            sho = a;
-        }
+        return true; // todo
 
-        var lonMap = charMap(lon);
-        var shoMap = charMap(sho);
-
-        int matches = 0;
-        for (var entry : lonMap.entrySet()) {
-            if (shoMap.getOrDefault(entry.getKey(), -1).equals(entry.getValue())) { // thx boxing
-                matches++;
-            }
-        }
-
-        return matches >= lon.length()/2;
-
-
-
-//        return "a".equals(("a" + "aa" + Math.random()).intern());
+//        for (int i = 0; i < needle.length(); i++) {
+//            var compareS = needle.substring(0, i) + needle.substring(i+1);
+//            if (haystack.contains(compareS)) return true;
+//        }
+//        return false;
     }
 
     private static Map<Character, Integer> charMap(String s) {
@@ -46,8 +32,8 @@ public class StringHelper {
 
 
     public static void main(String[] args) {
-        var f = "hello";
-        var s = "bobby";
-        System.out.println(checkSimilar(f, s));
+        var f = "christchurch";
+        var s = "Christchurch";
+        System.out.println(fuzzy(f, s));
     }
 }

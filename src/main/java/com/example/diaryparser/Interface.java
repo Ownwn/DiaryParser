@@ -107,7 +107,10 @@ public class Interface {
                 Application.notesTable.setItems(FXCollections.observableArrayList(Application.allNotes));
                 return;
             }
-            filterNotes(s -> StringHelper.checkSimilar(text.toLowerCase(), s.toLowerCase()));
+            filterNotes(s -> {
+                var b = StringHelper.fuzzy(text.toLowerCase(), s.toLowerCase());
+                return b;
+            });
         });
 
         return findBox;
