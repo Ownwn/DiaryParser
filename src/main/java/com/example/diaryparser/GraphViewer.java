@@ -21,8 +21,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Gatherers;
 
 public record GraphViewer(Pattern pattern) {
-    private static final int WIDTH = 700;
-    private static final double PADDING = 40;
+    private static final int WIDTH = 1400;
+    private static final double PADDING = 60;
 
     public GraphViewer {
 
@@ -143,13 +143,13 @@ public record GraphViewer(Pattern pattern) {
         play.setOnAction(_ -> t.play());
 
         Button replay = new Button("Replay");
-        replay.setOnAction(_ -> {
+        replay.setOnAction(_ -> { // todo
 
         });
 
 
         HBox buttons = new HBox(5);
-        buttons.getChildren().addAll(pause, play, skip);
+        buttons.getChildren().addAll(pause, play, skip, replay);
         root.getChildren().add(buttons);
 
         t.setCycleCount(drawPoints.size());
@@ -162,13 +162,13 @@ public record GraphViewer(Pattern pattern) {
 
         return new Timeline(
                 new KeyFrame(Duration.seconds(1), _ -> {
-
+                    if (i.get()+1 >= drawPoints.size()) return;
                     DrawPoint d = drawPoints.get(i.getAndIncrement());
 
                     root.getChildren().add(d.circle);
                     if (d.line != null) {
                         Line line = d.line;
-                        line.setStroke(line.getEndY() - line.getStartY() > 0 ? Color.RED : Color.BLUE);
+                        line.setStroke(line.getEndY() - line.getStartY() > 0 ? Color.BLUE : Color.RED);
                         root.getChildren().add(line);
                     }
                 })
