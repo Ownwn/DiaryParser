@@ -7,9 +7,30 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class DiaryParser {
+    private static final Pattern fileDatePattern = Pattern.compile("(\\d{4})-(\\d{1,2})-(\\d{1,2})\\.md");
+    private static final Comparator<File> fileOrder = (f1, f2) -> {
+        Matcher m1 = fileDatePattern.matcher(f1.getName());
+        Matcher m2 = fileDatePattern.matcher(f2.getName());
+
+        if (!m1.find()) {
+            return Integer.MIN_VALUE/2;
+        } else if (!m2.find()) {
+            return Integer.MAX_VALUE/2;
+        }
+
+        for (int i = 1; i < 4; i++) {
+            int compare = Integer.parseInt(m1.group(i)) - Integer.parseInt(m2.group(i));
+            if (compare != 0) return compare;
+
+        }
+        return 0;
+
+    };
 
     public static Stream<Note> getNotes(List<File> files) {
         return files.stream().map(DiaryParser::parseFile);
@@ -25,11 +46,15 @@ public class DiaryParser {
 
 
         if (recursive) {
-           return getChildrenRecursively(directory).filter(f -> f.getName().endsWith(".md")).toList();
+            List<File> files = new ArrayList<>(getChildrenRecursively(directory).filter(f -> f.getName().endsWith(".md")).toList());
+            files.sort(fileOrder);
+            return files;
         } else {
             File[] filesArray = directory.listFiles((dir, name) -> name.endsWith(".md"));
             assert filesArray != null;
-            return List.of(filesArray);
+            List<File> files = new ArrayList<>(List.of(filesArray));
+            files.sort(fileOrder);
+            return files;
         }
     }
 
